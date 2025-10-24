@@ -718,6 +718,7 @@ mod tests {
     use crate::token_data::KnownPlan;
     use crate::token_data::PlanType;
     use base64::Engine;
+    use codex_keyring_store::testing::MockKeyringStore;
     use codex_protocol::config_types::ForcedLoginMethod;
     use pretty_assertions::assert_eq;
     use serde::Serialize;
@@ -865,6 +866,101 @@ mod tests {
         assert!(removed);
         assert!(!dir.path().join("auth.json").exists());
         Ok(())
+    }
+
+    #[test]
+    fn keyring_auth_storage_load_returns_deserialized_auth() {
+        let codex_home = tempdir().unwrap();
+        let mock_keyring = MockKeyringStore::default();
+        let storage = KeyringAuthStorage::new(
+            codex_home.path().to_path_buf(),
+            Arc::new(mock_keyring.clone()),
+        );
+        let key = storage
+            .compute_store_key(codex_home.path())
+            .expect("compute key");
+        let expected = AuthDotJson {
+            openai_api_key: Some("sk-test".to_string()),
+            tokens: None,
+            last_refresh: None,
+        };
+        let serialized =
+            serde_json::to_string(&expected).expect("serialize auth for keyring storage");
+        mock_keyring
+            .save(KEYRING_SERVICE, &key, &serialized)
+            .expect("seed keyring");
+
+        let loaded = storage.load().expect("load should succeed");
+        assert_eq!(Some(expected), loaded);
+    }
+
+    #[test]
+    fn keyring_auth_storage_save_persists_and_removes_fallback_file() {
+        let codex_home = tempdir().unwrap();
+        let mock_keyring = MockKeyringStore::default();
+        let storage = KeyringAuthStorage::new(
+            codex_home.path().to_path_buf(),
+            Arc::new(mock_keyring.clone()),
+        );
+        let auth_file = get_auth_file(codex_home.path());
+        std::fs::write(&auth_file, "stale").expect("seed fallback auth file");
+        let auth = AuthDotJson {
+            openai_api_key: None,
+            tokens: Some(TokenData {
+                id_token: Default::default(),
+                access_token: "access".to_string(),
+                refresh_token: "refresh".to_string(),
+                account_id: Some("account".to_string()),
+            }),
+            last_refresh: Some(Utc::now()),
+        };
+
+        storage.save(&auth).expect("save should succeed");
+
+        let key = storage
+            .compute_store_key(codex_home.path())
+            .expect("compute key");
+        let saved_value = mock_keyring
+            .saved_value(&key)
+            .expect("keyring entry should exist");
+        assert_eq!(
+            serde_json::to_string(&auth).expect("serialize auth"),
+            saved_value
+        );
+        assert!(
+            !auth_file.exists(),
+            "fallback auth.json should be removed after keyring save"
+        );
+    }
+
+    #[test]
+    fn keyring_auth_storage_delete_removes_keyring_and_file() {
+        let codex_home = tempdir().unwrap();
+        let mock_keyring = MockKeyringStore::default();
+        let storage = KeyringAuthStorage::new(
+            codex_home.path().to_path_buf(),
+            Arc::new(mock_keyring.clone()),
+        );
+        let key = storage
+            .compute_store_key(codex_home.path())
+            .expect("compute key");
+        mock_keyring
+            .save(KEYRING_SERVICE, &key, "{}")
+            .expect("seed keyring");
+        let auth_file = get_auth_file(codex_home.path());
+        std::fs::write(&auth_file, "stale").expect("seed fallback auth file");
+
+        let removed = storage.delete().expect("delete should succeed");
+
+        assert!(removed, "delete should report removal");
+        assert!(
+            !mock_keyring.contains(&key),
+            "keyring entry should be removed"
+        );
+        assert!(
+            !auth_file.exists(),
+            "fallback auth.json should be removed after keyring delete"
+        );
     }
 
     struct AuthFileParams {
