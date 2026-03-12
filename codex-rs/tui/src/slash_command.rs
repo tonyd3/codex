@@ -23,6 +23,7 @@ pub enum SlashCommand {
     Experimental,
     Skills,
     Review,
+    Improve,
     Rename,
     New,
     Resume,
@@ -71,6 +72,7 @@ impl SlashCommand {
             SlashCommand::Init => "create an AGENTS.md file with instructions for Codex",
             SlashCommand::Compact => "summarize conversation to prevent hitting the context limit",
             SlashCommand::Review => "review my current changes and find issues",
+            SlashCommand::Improve => "analyze recent sessions for areas, friction, and suggestions",
             SlashCommand::Rename => "rename the current thread",
             SlashCommand::Resume => "resume a saved chat",
             SlashCommand::Clear => "clear the terminal and start a new chat",
@@ -148,6 +150,7 @@ impl SlashCommand {
             | SlashCommand::SandboxReadRoot
             | SlashCommand::Experimental
             | SlashCommand::Review
+            | SlashCommand::Improve
             | SlashCommand::Plan
             | SlashCommand::Clear
             | SlashCommand::Logout

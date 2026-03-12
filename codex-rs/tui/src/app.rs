@@ -2404,6 +2404,15 @@ impl App {
                 ));
                 tui.frame_requester().schedule_frame();
             }
+            AppEvent::ImprovePromptReady(result) => match result {
+                Ok(prompt) => {
+                    self.chat_widget.submit_plain_user_message(prompt);
+                }
+                Err(err) => {
+                    self.chat_widget
+                        .add_error_message(format!("/improve failed: {err}"));
+                }
+            },
             AppEvent::OpenAppLink {
                 app_id,
                 title,

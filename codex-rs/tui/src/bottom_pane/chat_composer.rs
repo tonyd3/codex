@@ -6443,6 +6443,60 @@ mod tests {
     }
 
     #[test]
+    fn slash_popup_improve_for_im_ui() {
+        use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
+
+        let (tx, _rx) = unbounded_channel::<AppEvent>();
+        let sender = AppEventSender::new(tx);
+
+        let mut composer = ChatComposer::new(
+            true,
+            sender,
+            false,
+            "Ask Codex to do anything".to_string(),
+            false,
+        );
+
+        type_chars_humanlike(&mut composer, &['/', 'i', 'm']);
+
+        let mut terminal = Terminal::new(TestBackend::new(60, 6)).expect("terminal");
+        terminal
+            .draw(|f| composer.render(f.area(), f.buffer_mut()))
+            .expect("draw composer");
+
+        insta::assert_snapshot!("slash_popup_im", terminal.backend());
+    }
+
+    #[test]
+    fn slash_popup_improve_for_im_logic() {
+        use super::super::command_popup::CommandItem;
+        let (tx, _rx) = unbounded_channel::<AppEvent>();
+        let sender = AppEventSender::new(tx);
+        let mut composer = ChatComposer::new(
+            true,
+            sender,
+            false,
+            "Ask Codex to do anything".to_string(),
+            false,
+        );
+        type_chars_humanlike(&mut composer, &['/', 'i', 'm']);
+
+        match &composer.active_popup {
+            ActivePopup::Command(popup) => match popup.selected_item() {
+                Some(CommandItem::Builtin(cmd)) => {
+                    assert_eq!(cmd.command(), "improve")
+                }
+                Some(CommandItem::UserPrompt(_)) => {
+                    panic!("unexpected prompt selected for '/im'")
+                }
+                None => panic!("no selected command for '/im'"),
+            },
+            _ => panic!("slash popup not active after typing '/im'"),
+        }
+    }
+
+    #[test]
     fn slash_popup_resume_for_res_ui() {
         use ratatui::Terminal;
         use ratatui::backend::TestBackend;

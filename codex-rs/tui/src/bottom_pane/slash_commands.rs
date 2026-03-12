@@ -38,6 +38,9 @@ pub(crate) fn builtins_for_input(flags: BuiltinCommandFlags) -> Vec<(&'static st
 
 /// Find a single built-in command by exact name, after applying the gating rules.
 pub(crate) fn find_builtin_command(name: &str, flags: BuiltinCommandFlags) -> Option<SlashCommand> {
+    if name == "insights" {
+        return Some(SlashCommand::Improve);
+    }
     builtins_for_input(flags)
         .into_iter()
         .find(|(command_name, _)| *command_name == name)
@@ -79,6 +82,14 @@ mod tests {
         assert_eq!(
             find_builtin_command("clear", all_enabled_flags()),
             Some(SlashCommand::Clear)
+        );
+    }
+
+    #[test]
+    fn insights_alias_resolves_to_improve() {
+        assert_eq!(
+            find_builtin_command("insights", all_enabled_flags()),
+            Some(SlashCommand::Improve)
         );
     }
 
