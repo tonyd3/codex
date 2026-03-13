@@ -250,6 +250,7 @@ use crate::history_cell::HistoryCell;
 use crate::history_cell::McpToolCallCell;
 use crate::history_cell::PlainHistoryCell;
 use crate::history_cell::WebSearchCell;
+use crate::improve_command;
 use crate::key_hint;
 use crate::key_hint::KeyBinding;
 use crate::markdown::append_markdown;
@@ -4005,6 +4006,30 @@ impl ChatWidget {
             SlashCommand::Review => {
                 self.open_review_popup();
             }
+            SlashCommand::Improve => {
+                self.add_info_message(
+                    format!(
+                        "Preparing /improve analysis from the last {} interactive sessions.",
+                        improve_command::DEFAULT_IMPROVE_SESSION_LIMIT
+                    ),
+                    Some(
+                        "Codex will inspect recent rollout history and highlight friction, repetition, and concrete improvements."
+                            .to_string(),
+                    ),
+                );
+                let tx = self.app_event_tx.clone();
+                let config = self.config.clone();
+                let current_rollout_path = self.rollout_path();
+                tokio::spawn(async move {
+                    let prompt = improve_command::build_improve_prompt(
+                        config,
+                        current_rollout_path,
+                        improve_command::DEFAULT_IMPROVE_SESSION_LIMIT,
+                    )
+                    .await;
+                    tx.send(AppEvent::ImprovePromptReady(prompt));
+                });
+            }
             SlashCommand::Rename => {
                 self.session_telemetry
                     .counter("codex.thread.rename", 1, &[]);
@@ -4495,6 +4520,10 @@ impl ChatWidget {
         } else {
             self.submit_user_message(user_message);
         }
+    }
+
+    pub(crate) fn submit_plain_user_message(&mut self, text: String) {
+        self.queue_user_message(text.into());
     }
 
     fn submit_user_message(&mut self, user_message: UserMessage) {

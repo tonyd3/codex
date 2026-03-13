@@ -139,6 +139,9 @@ pub(crate) enum AppEvent {
     /// Result of computing a `/diff` command.
     DiffResult(String),
 
+    /// Result of building a `/improve` prompt from recent session history.
+    ImprovePromptReady(Result<String, String>),
+
     /// Open the app link view in the bottom pane.
     OpenAppLink {
         app_id: String,
