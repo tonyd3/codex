@@ -4013,7 +4013,7 @@ impl ChatWidget {
                         improve_command::DEFAULT_IMPROVE_SESSION_LIMIT
                     ),
                     Some(
-                        "Codex will inspect recent rollout history and synthesize project areas, interaction style, friction, and suggestions."
+                        "Codex will inspect recent rollout history and highlight friction, repetition, and concrete improvements."
                             .to_string(),
                     ),
                 );

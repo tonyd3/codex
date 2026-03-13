@@ -450,25 +450,21 @@ impl ImproveDigest {
             ),
             String::new(),
             "Focus on:".to_string(),
-            "- The main project or workflow areas across these sessions.".to_string(),
-            "- My interaction style with Codex: how I scope work, refine requests, interrupt, and what I seem to value.".to_string(),
             "- Concrete friction patterns and the smallest prompt or default-behavior change that would address each one.".to_string(),
-            "- Explicit suggestions to try next, including prompt wording, default behaviors, and automation when the evidence is strong.".to_string(),
+            "- Explicit suggestions to try next, including prompt wording, default behaviors, and automation when the evidence is strong. Make the suggestions succinct and actionable.".to_string(),
             "- Repeated explanations or commentary that should be cut, shortened, or standardized."
                 .to_string(),
             "- Evidence-driven recommendations only. If support is weak, say so.".to_string(),
             "- Only suggest a new skill, slash command, hook, or helper script when the same workflow or friction shows up in at least two sessions.".to_string(),
             "- Keep the response concise: use at most 3 bullets per section.".to_string(),
-            "- In sections 3-6, make each bullet start with the change.".to_string(),
+            "- In every section, make each bullet start with the change.".to_string(),
             "- Do not restate the digest; cite only the minimum evidence needed to justify each recommendation.".to_string(),
             String::new(),
             "Respond with these sections:".to_string(),
-            "1. Project areas".to_string(),
-            "2. Interaction style".to_string(),
-            "3. Friction to address".to_string(),
-            "4. Suggestions to try".to_string(),
-            "5. Repetition to remove".to_string(),
-            "6. Ship next".to_string(),
+            "1. Friction to address".to_string(),
+            "2. Suggestions to try".to_string(),
+            "3. Repetition to remove".to_string(),
+            "4. Ship next".to_string(),
             String::new(),
             "## Aggregate stats".to_string(),
             format!("- Sessions analyzed: {}", self.sessions.len()),
@@ -940,9 +936,13 @@ mod tests {
         assert!(prompt.contains("I will inspect the command plumbing first."));
         assert!(prompt.contains("Most failed shell commands"));
         assert!(prompt.contains("cargo test -p codex-tui"));
-        assert!(prompt.contains("Project areas"));
-        assert!(prompt.contains("Interaction style"));
+        assert!(prompt.contains("Friction to address"));
         assert!(prompt.contains("Suggestions to try"));
+        assert!(prompt.contains("Repetition to remove"));
+        assert!(prompt.contains("Ship next"));
+        assert!(prompt.contains("Make the suggestions succinct and actionable."));
+        assert!(!prompt.contains("Project areas"));
+        assert!(!prompt.contains("Interaction style"));
         assert!(!prompt.contains(archived_rollout.to_string_lossy().as_ref()));
     }
 
